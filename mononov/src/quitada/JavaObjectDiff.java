@@ -18,11 +18,11 @@ import java.util.ResourceBundle;
  * 
  * @author quitada <a href="http://d.hatena.ne.jp/quitada/"
  *         target="_top">http://d.hatena.ne.jp/quitada/</a>
- * @version 0.4
+ * @version 0.4.5
  * 
  */
 public class JavaObjectDiff {
-	private final static String version = "0.4";
+	private final static String version = "0.4.5";
 	private final static String SPACES = "    ";
 	private final static String OPS_HEADER = "--";
 	private final static String SU_OPS_HEADER = "-";
