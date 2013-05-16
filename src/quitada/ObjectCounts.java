@@ -1,24 +1,18 @@
 package quitada;
 
-public class ObjectInfo {
+public class ObjectCounts {
 	private long numOfInstance;
-	private long numOfByte;
 	private String className;
 	
-	public ObjectInfo() {}
+	public ObjectCounts() {}
 	
-	public ObjectInfo(long numOfInstance, long numOfByte, String className) {
+	public ObjectCounts(long numOfInstance, String className) {
 		this.numOfInstance = numOfInstance;
-		this.numOfByte = numOfByte;
 		this.className = className;
 	}
 	
 	public long getNumOfInstance() {
 		return this.numOfInstance;
-	}
-	
-	public long getNumOfByte() {
-		return this.numOfByte;
 	}
 	
 	public String getClassName() {
