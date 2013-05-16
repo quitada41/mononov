@@ -18,7 +18,7 @@ import java.util.ResourceBundle;
  * 
  * @author quitada <a href="http://d.hatena.ne.jp/quitada/"
  *         target="_top">http://d.hatena.ne.jp/quitada/</a>
- * @version 0.4
+ * @version 0.4.5
  * 
  */
 public class JavaObjectDiff {
