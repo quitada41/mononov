@@ -54,6 +54,8 @@ public class JavaObjectDiff {
 	private final static String CSV_SUBOPS = "csv";
 	private final static String CSV_SU_SUBOPS = "c";
 	private final static String RES_BNDL = "quitada.props.messages";
+	private final static String EX_BNDL = "quitada.props.exceptions";
+	private final static String NULL_CLN = "NullClass";
 
 	private static String charSet = "ISO-8859-1";
 
@@ -193,7 +195,14 @@ public class JavaObjectDiff {
 		} else {
 			secondFile = args[numOps + 1];
 		}
-		mononov.runMerge(st, ido, tabl, fmt, args[numOps], secondFile);
+		try {
+			mononov.runMerge(st, ido, tabl, fmt, args[numOps], secondFile);
+		} catch (MononovException mex) {
+			System.out.println(mex.getLocalizedMessage());
+			//System.out.println(mex.getMessage());
+			//System.out.println(mex.getCause().toString());
+			System.exit(1);
+		}
 	}
 
 	/**
@@ -223,9 +232,11 @@ public class JavaObjectDiff {
 	 *            Path name to histogram file after memory leak. If this
 	 *            parameter is null, this method just sort histogram set as
 	 *            "before" parameter.
+	 * @throws quitada.MononovException Any exceptions while happening merging jmap histograms
+	 *            
 	 */
 	public void runMerge(int sortType, boolean isDesOrd, int tabLength, int resultFormat, 
-			String before, String after) {
+			String before, String after) throws MononovException {
 		String[] files = { before, after };
 		ArrayList<ObjectInfo> listOfObjectInfo = new ArrayList<ObjectInfo>();
 		HashMap<String, Long[]> mapOfObjectInfo = new HashMap<String, Long[]>();
@@ -274,12 +285,13 @@ public class JavaObjectDiff {
 							}
 						}
 						if (cn == null) {
-							System.out.println(getI18nMessages("no_class_name")
+							/*System.out.println(getI18nMessages("no_class_name")
 									+ ": " + files[n]);
 							System.out.println(getI18nMessages("line_num")
 									+ " " + line + ": "
 									+ getI18nMessages("specify_class_name"));
-							System.exit(0);
+							System.exit(0);*/
+							throw new NullPointerException(NULL_CLN);
 						}
 						if (n == 0) {
 							listOfObjectInfo.add(new ObjectInfo(
@@ -296,35 +308,53 @@ public class JavaObjectDiff {
 				b.close();
 				f.close();
 			} catch (FileNotFoundException ex) {
-				System.out.println(getI18nMessages("file_not_found") + ": "
-						+ files[n]);
-				System.exit(0);
+				String message = getNonLocalizedExMeg("file_not_found") + ": " + files[n];
+				String localizedMessage = getI18nMessages("file_not_found") + ": " + files[n];
+				throw new MononovException(message, localizedMessage, ex);
 			} catch (NumberFormatException ex) {
-				System.out.println(getI18nMessages("illegal_num_format") + ": "
+				String message = getNonLocalizedExMeg("illegal_num_format") + ": " + files[n] + "\n" +
+						getNonLocalizedExMeg("line_num") + " " + line + ": ";
+				String localizedMessage = getI18nMessages("illegal_num_format") + ": " + files[n] + "\n" +
+						getI18nMessages("line_num") + " " + line + ": ";			
+				/*System.out.println(getI18nMessages("illegal_num_format") + ": "
 						+ files[n]);
 				System.out.print(getI18nMessages("line_num") + " " + line
-						+ ": ");
+						+ ": ");*/
 				switch (u) {
 				case 1:
-					System.out.println(getI18nMessages("illegal_num_instances")
-							+ " -> \"" + tmpStr + "\"");
+					message = message + getNonLocalizedExMeg("illegal_num_instances") +	" -> \"" + tmpStr + "\"";
+					localizedMessage = localizedMessage + getI18nMessages("illegal_num_instances") +
+							" -> \"" + tmpStr + "\"";
 					break;
 				case 2:
-					System.out.println(getI18nMessages("illegal_num_bytes")
-							+ " -> \"" + tmpStr + "\"");
+					message = message + getNonLocalizedExMeg("illegal_num_bytes") + " -> \"" + tmpStr + "\"";	
+					localizedMessage = localizedMessage + getI18nMessages("illegal_num_bytes") +
+							" -> \"" + tmpStr + "\"";	
 					break;
 				default:
 					// should not be called
-					System.out.print("\n");
+					//System.out.print("\n");
 				}
-				System.exit(0);
+				throw new MononovException(message, localizedMessage, ex);
+			} catch (NullPointerException ex) {
+				if (ex.getMessage().equals(NULL_CLN)) {
+					String localizedMessage = getI18nMessages("no_class_name")
+							+ ": " + files[n] + "\n" + getI18nMessages("line_num")
+							+ " " + line + ": "	+ getI18nMessages("specify_class_name");
+					String message = getNonLocalizedExMeg("no_class_name")
+							+ ": " + files[n] + "\n" + getNonLocalizedExMeg("line_num")
+							+ " " + line + ": "	+ getNonLocalizedExMeg("specify_class_name");
+					throw new MononovException(message, localizedMessage, ex);
+				} else {
+					throw new MononovException(ex);
+				}
 			} catch (IOException ex) {
-				System.out.println(getI18nMessages("IO_error"));
-				ex.printStackTrace();
-				System.exit(0);
+				String localizedMessage = getI18nMessages("IO_error");
+				String message = getNonLocalizedExMeg("IO_error");
+				throw new MononovException(message, localizedMessage, ex);
 			} catch (Exception ex) { // unknown runtime exception
-				ex.printStackTrace();
-				System.exit(0);
+				//ex.printStackTrace();
+				throw new MononovException(ex);
 			}
 		}
 
@@ -383,7 +413,7 @@ public class JavaObjectDiff {
 
 		String columnName[] = {"","",""};
 		boolean[] isLongerThanVal = { true, true };
-		
+
 		if (resultFormat == 0) { // determine sort type and order to show as message - needless for CSV
 			System.out.println(getResultPatternMessage(isDesOrd, sortType));
 
@@ -544,15 +574,22 @@ public class JavaObjectDiff {
 	}
 
 	private static String getI18nMessages(String key) {
+		return commonMessageGenerator(key, RES_BNDL);
+	}
+
+	private static String getNonLocalizedExMeg(String key) {
+		return commonMessageGenerator(key, EX_BNDL);
+	}
+
+	private static String commonMessageGenerator(String key, String resourceBundle) {
 		try {
-			return ResourceBundle.getBundle(RES_BNDL).getString(key);
+			return ResourceBundle.getBundle(resourceBundle).getString(key);
 		} catch (MissingResourceException ex) {
-			System.out
-			.println("Failed to get a resource bundle for i18n messages: "
-					+ ex.toString());
+			//System.out.println("Failed to get a resource bundle for i18n messages: " + ex.toString());
 			return new String("NO RESOURCE BUNDLES!!");
 		}
 	}
+
 
 	/*
 	 * private String testToBeCalledFromNonStaticMethod(String a, String b) {
