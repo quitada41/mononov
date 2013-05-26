@@ -72,7 +72,7 @@ public class JavaObjectDiff {
 		JavaObjectDiff mononov = new JavaObjectDiff();
 		int numOps = 0;
 
-		// -----default configuraion
+		// -----default configuration
 		// st = 0 by instance/1: by byte/2: by class name
 		int st = 0;
 		// ido = true: Descending order/false: Ascending order
