@@ -59,6 +59,13 @@ public class JavaObjectDiff {
 
 	private static String charSet = "ISO-8859-1";
 
+	//--- private parameter for CUI from here
+	private static int maxClLength[] = {0,0};
+	private static boolean isCUI = false;
+	//--- to here
+
+	public JavaObjectDiff() {
+	}
 	public static void main(String[] args) {
 		// need to calculate the length of column name according to language -
 		// needless for CSV
@@ -195,14 +202,128 @@ public class JavaObjectDiff {
 		} else {
 			secondFile = args[numOps + 1];
 		}
+
+		Object[] oa = null;
+
 		try {
-			mononov.runMerge(st, ido, tabl, fmt, args[numOps], secondFile);
+			isCUI = true;
+			oa = mononov.runMerge(st, ido, tabl, fmt, args[numOps], secondFile);	
 		} catch (MononovException mex) {
 			System.out.println(mex.getLocalizedMessage());
 			//System.out.println(mex.getMessage());
 			//System.out.println(mex.getCause().toString());
 			System.exit(1);
 		}
+
+		String columnName[] = {"","",""};
+		boolean[] isLongerThanVal = { true, true };
+
+		if (fmt == 0) { // determine sort type and order to show as message - needless for CSV
+			//System.out.println(getResultPatternMessage(ido, st));
+			String sot = getI18nMessages("num_instances"); // "#instances";
+			String soo = getI18nMessages("descending"); // "descending";
+			if (!ido) {
+				soo = getI18nMessages("ascending"); // "ascending";
+			}
+			if (st == 1) {
+				sot = getI18nMessages("num_bytes"); // "#bytes";
+			} else if (st == 2) {
+				sot = getI18nMessages("class_name"); // "class name";
+			}
+
+			String rpm ="";
+			if (System.getProperty("user.language").equals("ja")) {
+				rpm = sot + getI18nMessages("de") + soo + getI18nMessages("ni_sort");
+			} else {
+				rpm = "Sorted by " + sot + " in " + soo + " order.";
+			}
+			System.out.println(rpm);
+
+			columnName[2] = getI18nMessages("class_name");
+			if (secondFile == null) {
+				columnName[0] = getI18nMessages("num_instances");
+				columnName[1] = getI18nMessages("num_bytes");
+			} else {
+				columnName[0] = getI18nMessages("diff_num_instances");
+				columnName[1] = getI18nMessages("diff_num_bytes");
+			}
+
+			String clTitles = "";
+			String clUnder = "";
+			try {
+				for (int i = 0; i < columnName.length; i++) {
+					clTitles = clTitles + columnName[i];
+					clUnder = clUnder
+							+ fillMonoChar(columnName[i].getBytes(charSet).length,
+									'-');
+					if (i < (columnName.length - 1)) {
+						int ic = columnName[i].getBytes(charSet).length / tabl;
+						int iv = maxClLength[i] / tabl;
+						String tabs = "";
+						if (ic < iv) {
+							tabs = fillMonoChar(iv - ic, '\t');
+							isLongerThanVal[i] = false;
+						}
+						clTitles = clTitles + tabs + "\t";
+						clUnder = clUnder + tabs + "\t";
+					}
+				}
+				System.out.println(clTitles + "\n" + clUnder);
+			} catch (UnsupportedEncodingException ex) {
+				ex.printStackTrace(); // this should be never called
+				System.exit(1);
+			}				
+		}
+		//--- to here
+
+		// show result - need for CSV partially
+		//if (isCUI) {
+		for (int i = 0; i < oa.length; i++) {
+			for (int u = 0; u < columnName.length; u++) {
+				String ts = "";
+				switch (u) {
+				case 0:
+					ts = new Long(((ObjectInfo) oa[i]).getNumOfInstance())
+					.toString();
+					break;
+				case 1:
+					ts = new Long(((ObjectInfo) oa[i]).getNumOfByte())
+					.toString();
+					break;
+				case 2:
+					ts = ((ObjectInfo) oa[i]).getClassName();
+					break;
+				}
+
+				// determine the number of TAB - needless for CSV, instead
+				// need to add ","
+				if (fmt == 0) { // standard format
+					try {
+						if (u < (columnName.length - 1)) {
+							int im;
+							if (isLongerThanVal[u]) {
+								im = columnName[u].getBytes(charSet).length / tabl;
+							} else {
+								im = maxClLength[u] / tabl;
+							}
+							int ic = ts.length() / tabl;
+							ts = ts + fillMonoChar(im - ic, '\t') + "\t";
+						}
+
+					} catch (UnsupportedEncodingException ex) {
+						ex.printStackTrace(); // this should be never called
+						System.exit(1);
+					}
+				} else if (i < (oa.length -1) || u < (columnName.length - 1)) { // csv format
+					ts = ts + ",";
+				}
+				// print one line for results - need for CSV
+				System.out.print(ts);
+			}
+			System.out.print("\n");
+		}
+		//}
+		//--- to here
 	}
 
 	/**
@@ -215,7 +336,7 @@ public class JavaObjectDiff {
 	 * </tr>
 	 * </table>
 	 * 
-	 * @since 0.3.5
+	 * @since 0.4.5
 	 * @param sortType
 	 *            Type of sorting: 0 - by instance /1 - by byte /2 - by class
 	 *            name
@@ -233,16 +354,18 @@ public class JavaObjectDiff {
 	 *            parameter is null, this method just sort histogram set as
 	 *            "before" parameter.
 	 * @throws quitada.MononovException Any exceptions while happening merging jmap histograms
+	 * 
+	 * @return Object array merged and sorted according to condition
 	 *            
 	 */
-	public void runMerge(int sortType, boolean isDesOrd, int tabLength, int resultFormat, 
+	public Object[] runMerge(int sortType, boolean isDesOrd, int tabLength, int resultFormat, 
 			String before, String after) throws MononovException {
+
+		//--- reading data from files from here
 		String[] files = { before, after };
 		ArrayList<ObjectInfo> listOfObjectInfo = new ArrayList<ObjectInfo>();
 		HashMap<String, Long[]> mapOfObjectInfo = new HashMap<String, Long[]>();
 
-		// to do - to implement to throw MononovException if setting invalid
-		// value of parameters
 		int nn = 2;
 		if (after == null) {
 			nn = 1;
@@ -285,12 +408,6 @@ public class JavaObjectDiff {
 							}
 						}
 						if (cn == null) {
-							/*System.out.println(getI18nMessages("no_class_name")
-									+ ": " + files[n]);
-							System.out.println(getI18nMessages("line_num")
-									+ " " + line + ": "
-									+ getI18nMessages("specify_class_name"));
-							System.exit(0);*/
 							throw new NullPointerException(NULL_CLN);
 						}
 						if (n == 0) {
@@ -333,7 +450,6 @@ public class JavaObjectDiff {
 					break;
 				default:
 					// should not be called
-					//System.out.print("\n");
 				}
 				throw new MononovException(message, localizedMessage, ex);
 			} catch (NullPointerException ex) {
@@ -353,12 +469,17 @@ public class JavaObjectDiff {
 				String message = getNonLocalizedExMeg("IO_error");
 				throw new MononovException(message, localizedMessage, ex);
 			} catch (Exception ex) { // unknown runtime exception
-				//ex.printStackTrace();
 				throw new MononovException(ex);
 			}
 		}
+		//--- to here
 
-		int maxClLength[] = { 0, 0 };
+		//--- comparing data from here
+		//int maxClLength[] = { 0, 0 }; // need to move to main()
+		if (isCUI) {
+			maxClLength[0] = 0;
+			maxClLength[1] = 0;
+		}
 		int justSort = 1;
 		if (after == null) {
 			justSort = -1;
@@ -387,10 +508,12 @@ public class JavaObjectDiff {
 				tlv1 = -(bnob * justSort);
 			}
 			newListOfObjectInfo.add(new ObjectInfo(tlv0, tlv1, cn));
-			maxClLength[0] = compareLength(new Long(tlv0).toString().length(),
-					maxClLength[0]);
-			maxClLength[1] = compareLength(new Long(tlv1).toString().length(),
-					maxClLength[1]);
+			if (isCUI) {
+				maxClLength[0] = compareLength(new Long(tlv0).toString().length(),
+						maxClLength[0]);
+				maxClLength[1] = compareLength(new Long(tlv1).toString().length(),
+						maxClLength[1]);
+			}
 		}
 		if (mapOfObjectInfo.size() > 0) {
 			Iterator<Entry<String, Long[]>> it = mapOfObjectInfo.entrySet()
@@ -400,104 +523,21 @@ public class JavaObjectDiff {
 				Long[] tv = en.getValue();
 				newListOfObjectInfo.add(new ObjectInfo(tv[0].longValue(), tv[1]
 						.longValue(), en.getKey()));
-				maxClLength[0] = compareLength(tv[0].toString().length(),
-						maxClLength[0]);
-				maxClLength[1] = compareLength(tv[1].toString().length(),
-						maxClLength[1]);
+				if (isCUI) {
+					maxClLength[0] = compareLength(tv[0].toString().length(),
+							maxClLength[0]);
+					maxClLength[1] = compareLength(tv[1].toString().length(),
+							maxClLength[1]);
+				}
 			}
 		}
+		//--- to here
 
-		// sorting result - need for CSV
+		//--- sorting result - need for CSV - from here
 		Object[] oa = newListOfObjectInfo.toArray();
 		Arrays.sort(oa, new CommonDataComparator(sortType, isDesOrd));
 
-		String columnName[] = {"","",""};
-		boolean[] isLongerThanVal = { true, true };
-
-		if (resultFormat == 0) { // determine sort type and order to show as message - needless for CSV
-			System.out.println(getResultPatternMessage(isDesOrd, sortType));
-
-			columnName[2] = getI18nMessages("class_name");
-			if (after == null) {
-				columnName[0] = getI18nMessages("num_instances");
-				columnName[1] = getI18nMessages("num_bytes");
-			} else {
-				columnName[0] = getI18nMessages("diff_num_instances");
-				columnName[1] = getI18nMessages("diff_num_bytes");
-			}
-
-			String clTitles = "";
-			String clUnder = "";
-			try {
-				for (int i = 0; i < columnName.length; i++) {
-					clTitles = clTitles + columnName[i];
-					clUnder = clUnder
-							+ fillMonoChar(columnName[i].getBytes(charSet).length,
-									'-');
-					if (i < (columnName.length - 1)) {
-						int ic = columnName[i].getBytes(charSet).length / tabLength;
-						int iv = maxClLength[i] / tabLength;
-						String tabs = "";
-						if (ic < iv) {
-							tabs = fillMonoChar(iv - ic, '\t');
-							isLongerThanVal[i] = false;
-						}
-						clTitles = clTitles + tabs + "\t";
-						clUnder = clUnder + tabs + "\t";
-					}
-				}
-				System.out.println(clTitles + "\n" + clUnder);
-			} catch (UnsupportedEncodingException ex) {
-				ex.printStackTrace(); // this should be never called
-			}				
-		}
-
-
-		// show result - need for CSV partially
-		for (int i = 0; i < oa.length; i++) {
-			for (int u = 0; u < columnName.length; u++) {
-				String ts = "";
-				switch (u) {
-				case 0:
-					ts = new Long(((ObjectInfo) oa[i]).getNumOfInstance())
-					.toString();
-					break;
-				case 1:
-					ts = new Long(((ObjectInfo) oa[i]).getNumOfByte())
-					.toString();
-					break;
-				case 2:
-					ts = ((ObjectInfo) oa[i]).getClassName();
-					break;
-				}
-
-				// determine the number of TAB - needless for CSV, instead
-				// need to add ","
-				if (resultFormat == 0) { // standard format
-					try {
-						if (u < (columnName.length - 1)) {
-							int im;
-							if (isLongerThanVal[u]) {
-								im = columnName[u].getBytes(charSet).length
-										/ tabLength;
-							} else {
-								im = maxClLength[u] / tabLength;
-							}
-							int ic = ts.length() / tabLength;
-							ts = ts + fillMonoChar(im - ic, '\t') + "\t";
-						}
-
-					} catch (UnsupportedEncodingException ex) {
-						ex.printStackTrace(); // this should be never called
-					}
-				} else if (i < (oa.length -1) || u < (columnName.length - 1)) { // csv format
-					ts = ts + ",";
-				}
-				// print one line for results - need for CSV
-				System.out.print(ts);
-			}
-			System.out.print("\n");
-		}
+		return oa;
 	}
 
 	private int compareLength(int i1, int i2) {
@@ -508,7 +548,7 @@ public class JavaObjectDiff {
 		}
 	}
 
-	private String fillMonoChar(int length, char chr) {
+	private static String fillMonoChar(int length, char chr) {
 		if (length > 0) {
 			char[] cbuf = new char[length];
 			Arrays.fill(cbuf, chr);
@@ -588,33 +628,5 @@ public class JavaObjectDiff {
 			//System.out.println("Failed to get a resource bundle for i18n messages: " + ex.toString());
 			return new String("NO RESOURCE BUNDLES!!");
 		}
-	}
-
-
-	/*
-	 * private String testToBeCalledFromNonStaticMethod(String a, String b) {
-	 * return a + b; }
-	 */
-
-	private String getResultPatternMessage(boolean isDesOrd, int sortType) {
-		String sot = getI18nMessages("num_instances"); // "#instances";
-		String soo = getI18nMessages("descending"); // "descending";
-		if (!isDesOrd) {
-			soo = getI18nMessages("ascending"); // "ascending";
-		}
-		if (sortType == 1) {
-			sot = getI18nMessages("num_bytes"); // "#bytes";
-		} else if (sortType == 2) {
-			sot = getI18nMessages("class_name"); // "class name";
-		}
-
-		String rpm ="";
-		if (System.getProperty("user.language").equals("ja")) {
-			rpm = sot + getI18nMessages("de") + soo + getI18nMessages("ni_sort");
-		} else {
-			rpm = "Sorted by " + sot + " in " + soo + " order.";
-		}
-
-		return rpm;
 	}
 }
