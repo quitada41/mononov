@@ -14,7 +14,7 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 /**
- * JavaObjectDiff (code name: Mononov)
+ * Mononov CUI and logic (JavaObjectDiff)
  * 
  * @author quitada <a href="http://d.hatena.ne.jp/quitada/"
  *         target="_top">http://d.hatena.ne.jp/quitada/</a>
@@ -66,6 +66,8 @@ public class JavaObjectDiff {
 
 	public JavaObjectDiff() {
 	}
+	
+	
 	public static void main(String[] args) {
 		// need to calculate the length of column name according to language -
 		// needless for CSV
@@ -203,11 +205,13 @@ public class JavaObjectDiff {
 			secondFile = args[numOps + 1];
 		}
 
-		Object[] oa = null;
+		ObjectInfo[] oa = null;
 
 		try {
 			isCUI = true;
-			oa = mononov.runMerge(st, ido, tabl, fmt, args[numOps], secondFile);	
+			 //@param resultFormat
+			 //Result format: 0 - standard format suitable for console delimited by TAB/ 1 - comma separated value 
+			oa = mononov.runMerge(st, ido, tabl, args[numOps], secondFile);	
 		} catch (MononovException mex) {
 			System.out.println(mex.getLocalizedMessage());
 			//System.out.println(mex.getMessage());
@@ -283,15 +287,15 @@ public class JavaObjectDiff {
 				String ts = "";
 				switch (u) {
 				case 0:
-					ts = new Long(((ObjectInfo) oa[i]).getNumOfInstance())
+					ts = new Long(oa[i].getNumOfInstance())
 					.toString();
 					break;
 				case 1:
-					ts = new Long(((ObjectInfo) oa[i]).getNumOfByte())
+					ts = new Long(oa[i].getNumOfByte())
 					.toString();
 					break;
 				case 2:
-					ts = ((ObjectInfo) oa[i]).getClassName();
+					ts = oa[i].getClassName();
 					break;
 				}
 
@@ -345,8 +349,6 @@ public class JavaObjectDiff {
 	 *            /false - ascending order
 	 * @param tabLength
 	 *            Desired TAB length with integer value larger than 0
-	 * @param resultFormat
-	 *            Result format: 0 - standard format suitable for console delimited by TAB/ 1 - comma separated value 
 	 * @param before
 	 *            Path name to histogram file before memory leak
 	 * @param after
@@ -355,10 +357,10 @@ public class JavaObjectDiff {
 	 *            "before" parameter.
 	 * @throws quitada.MononovException Any exceptions while happening merging jmap histograms
 	 * 
-	 * @return Object array merged and sorted according to condition
+	 * @return Array of ObjectInfo objects merged and sorted according to condition
 	 *            
 	 */
-	public Object[] runMerge(int sortType, boolean isDesOrd, int tabLength, int resultFormat, 
+	public ObjectInfo[] runMerge(int sortType, boolean isDesOrd, int tabLength, 
 			String before, String after) throws MononovException {
 
 		//--- reading data from files from here
@@ -534,7 +536,7 @@ public class JavaObjectDiff {
 		//--- to here
 
 		//--- sorting result - need for CSV - from here
-		Object[] oa = newListOfObjectInfo.toArray();
+		ObjectInfo[] oa = (ObjectInfo[])newListOfObjectInfo.toArray(new ObjectInfo[]{});
 		Arrays.sort(oa, new CommonDataComparator(sortType, isDesOrd));
 
 		return oa;
