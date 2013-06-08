@@ -10,8 +10,6 @@ import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 
 /**
  * Mononov CUI and logic (JavaObjectDiff)
@@ -21,42 +19,7 @@ import java.util.ResourceBundle;
  * @version 0.4.5
  * 
  */
-public class JavaObjectDiff {
-	private final static String version = "0.4.5";
-	private final static String SPACES = "    ";
-	private final static String OPS_HEADER = "--";
-	private final static String SU_OPS_HEADER = "-";
-	private final static String SUBOPS_DELI = ":";
-	private final static String HLP_OPS = OPS_HEADER + "help";
-	private final static String HLP_SU_OPS = SU_OPS_HEADER + "h";
-	private final static String VAR_OPS = OPS_HEADER + "version";
-	private final static String VAR_SU_OPS = SU_OPS_HEADER + "v";
-	private final static String SORT_OPS = OPS_HEADER + "sort";
-	private final static String SORT_SU_OPS = SU_OPS_HEADER + "s";
-	private final static String CNT_SUBOPS = "instance";
-	private final static String CNT_SU_SUBOPS = "i";
-	private final static String BYT_SUBOPS = "byte";
-	private final static String BYT_SU_SUBOPS = "b";
-	private final static String CLS_SUBOPS = "class";
-	private final static String CLS_SU_SUBOPS = "c";
-	private final static String ORD_OPS = OPS_HEADER + "order";
-	private final static String ORD_SU_OPS = SU_OPS_HEADER + "o";
-	private final static String DES_SUBOPS = "des";
-	private final static String DES_SU_SUBOPS = "d";
-	private final static String ASC_SUBOPS = "asc";
-	private final static String ASC_SU_SUBOPS = "a";
-	private final static String TAB_OPS = OPS_HEADER + "tab";
-	private final static String TAB_SU_OPS = SU_OPS_HEADER + "t";
-	private final static String FORMAT_OPS = OPS_HEADER + "format";
-	private final static String FORMAT_SU_OPS = SU_OPS_HEADER + "f";
-	private final static String STD_SUBOPS = "standard";
-	private final static String STD_SU_SUBOPS = "s";
-	private final static String CSV_SUBOPS = "csv";
-	private final static String CSV_SU_SUBOPS = "c";
-	private final static String RES_BNDL = "quitada.props.messages";
-	private final static String EX_BNDL = "quitada.props.exceptions";
-	private final static String NULL_CLN = "NullClass";
-
+public class JavaObjectDiff extends MononovCommons {
 	private static String charSet = "ISO-8859-1";
 
 	//--- private parameter for CUI from here
@@ -211,7 +174,9 @@ public class JavaObjectDiff {
 			isCUI = true;
 			 //@param resultFormat
 			 //Result format: 0 - standard format suitable for console delimited by TAB/ 1 - comma separated value 
-			oa = mononov.runMerge(st, ido, tabl, args[numOps], secondFile);	
+			 //@param tabLength
+			 //            Desired TAB length with integer value larger than 0
+			oa = mononov.runMerge(st, ido, args[numOps], secondFile);	
 		} catch (MononovException mex) {
 			System.out.println(mex.getLocalizedMessage());
 			//System.out.println(mex.getMessage());
@@ -347,8 +312,6 @@ public class JavaObjectDiff {
 	 * @param isDesOrd
 	 *            Sort in descending order or not: true - descending order
 	 *            /false - ascending order
-	 * @param tabLength
-	 *            Desired TAB length with integer value larger than 0
 	 * @param before
 	 *            Path name to histogram file before memory leak
 	 * @param after
@@ -360,7 +323,7 @@ public class JavaObjectDiff {
 	 * @return Array of ObjectInfo objects merged and sorted according to condition
 	 *            
 	 */
-	public ObjectInfo[] runMerge(int sortType, boolean isDesOrd, int tabLength, 
+	public ObjectInfo[] runMerge(int sortType, boolean isDesOrd, 
 			String before, String after) throws MononovException {
 
 		//--- reading data from files from here
@@ -613,22 +576,5 @@ public class JavaObjectDiff {
 				+ getI18nMessages("stand_format") + "\n" + SPACES + "\t"
 				+ SPACES + CSV_SUBOPS + " | " + CSV_SU_SUBOPS + "\t:"
 				+ getI18nMessages("csv_format"));
-	}
-
-	private static String getI18nMessages(String key) {
-		return commonMessageGenerator(key, RES_BNDL);
-	}
-
-	private static String getNonLocalizedExMeg(String key) {
-		return commonMessageGenerator(key, EX_BNDL);
-	}
-
-	private static String commonMessageGenerator(String key, String resourceBundle) {
-		try {
-			return ResourceBundle.getBundle(resourceBundle).getString(key);
-		} catch (MissingResourceException ex) {
-			//System.out.println("Failed to get a resource bundle for i18n messages: " + ex.toString());
-			return new String("NO RESOURCE BUNDLES!!");
-		}
 	}
 }

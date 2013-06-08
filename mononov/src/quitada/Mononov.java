@@ -9,14 +9,12 @@ package quitada;
 public class Mononov {
 	private int sortType;
 	private boolean isDesOrd;
-	private int tabLength;
 	private String before;
 	private String after;
 
-	public Mononov (int sortType, boolean isDesOrd, int tabLength, String before, String after) {
+	public Mononov (int sortType, boolean isDesOrd, String before, String after) {
 		this.sortType = sortType;
 		this.isDesOrd = isDesOrd;
-		this.tabLength = tabLength;
 		this.before = before;
 		this.after = after;
 	}
@@ -37,6 +35,6 @@ public class Mononov {
 	 *            
 	 */
 	public ObjectInfo[] runMerge() throws MononovException {
-		return new JavaObjectDiff().runMerge(sortType, isDesOrd, tabLength, before, after);
+		return new JavaObjectDiff().runMerge(sortType, isDesOrd, before, after);
 	}
 }
