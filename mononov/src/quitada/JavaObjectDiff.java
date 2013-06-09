@@ -16,7 +16,7 @@ import java.io.UnsupportedEncodingException;
  * 
  * @author quitada <a href="http://d.hatena.ne.jp/quitada/"
  *         target="_top">http://d.hatena.ne.jp/quitada/</a>
- * @version 0.4.5
+ * @version 0.5
  * 
  */
 public class JavaObjectDiff extends MononovCommons {
@@ -29,8 +29,8 @@ public class JavaObjectDiff extends MononovCommons {
 
 	public JavaObjectDiff() {
 	}
-	
-	
+
+
 	public static void main(String[] args) {
 		// need to calculate the length of column name according to language -
 		// needless for CSV
@@ -53,12 +53,13 @@ public class JavaObjectDiff extends MononovCommons {
 		int tabl = 8;
 		// fmt = 0: stand format/ 1: CSV format
 		int fmt = 0;
+		// quote: quiote string to wrap each csv
+		String quote = "";
 		// -----
 
 		boolean foundFirstFile = false;
 		int argi;
 		for (argi = 0; argi < args.length; argi++) {
-			boolean validOps = false;
 			if (args[argi].equals(HLP_OPS) || args[argi].equals(HLP_SU_OPS)) {
 				showVersion(mononov.getClass().getSimpleName());
 				showUsage(mononov.getClass().getName());
@@ -71,63 +72,97 @@ public class JavaObjectDiff extends MononovCommons {
 				System.exit(0);
 			}
 
+			boolean validOps = false;
+			boolean haveSecondSubParams = true;
 			String ostr = "";
 			String subops = "";
+			String subparam = "";
+			//String quote = "";
 			int dindex = -1;
+			int sindex = -1;
+			int eindex = -1;
 			try {
 				dindex = args[argi].indexOf(SUBOPS_DELI);
+				sindex = args[argi].indexOf(SUBPARAMS_SEPRATOR);
+				eindex = args[argi].indexOf(EQUAL);
 				ostr = args[argi].substring(0, dindex);
-				subops = args[argi].substring(dindex + 1);
+				if (sindex == -1) {
+					sindex = args[argi].length();
+					haveSecondSubParams = false;
+				}
+				subops = args[argi].substring(dindex + 1,sindex);
+				subparam = args[argi].substring(sindex + 1, eindex);
+				quote = args[argi].substring(eindex + 1);
 			} catch (StringIndexOutOfBoundsException ex) {
+				//ex.printStackTrace();
 				;
-			}
+			} /*finally {
+				System.out.println("dindex=" + dindex);
+				System.out.println("sindex=" + sindex);
+				System.out.println("haveSecondSubParams=" + haveSecondSubParams);
+				System.out.println("eindex=" + eindex);
+				System.out.println("ostr=" + ostr);
+				System.out.println("subops=" + subops);
+				System.out.println("subparam=" + subparam);
+				System.out.println("quote=" + quote);
+			}*/
 
 			// logic for options required with sub option
 			if (ostr.equals(SORT_OPS) || ostr.equals(SORT_SU_OPS)) { // set sort type
-				if (subops.equals(CNT_SUBOPS) || subops.equals(CNT_SU_SUBOPS)) {
-					numOps++;
-					validOps = true;
-				} else if (subops.equals(BYT_SUBOPS)
-						|| subops.equals(BYT_SU_SUBOPS)) {
-					st = 1;
-					numOps++;
-					validOps = true;
-				} else if (subops.equals(CLS_SUBOPS)
-						|| subops.equals(CLS_SU_SUBOPS)) {
-					st = 2;
-					numOps++;
-					validOps = true;
-				}
-			} else if (ostr.equals(ORD_OPS) || ostr.equals(ORD_SU_OPS)) { // set order
-				if (subops.equals(DES_SUBOPS) || subops.equals(DES_SU_SUBOPS)) {
-					numOps++;
-					validOps = true;
-				} else if (subops.equals(ASC_SUBOPS)
-						|| subops.equals(ASC_SU_SUBOPS)) {
-					ido = false;
-					numOps++;
-					validOps = true;
-				}
-			} else if (ostr.equals(TAB_OPS) || ostr.equals(TAB_SU_OPS)) { // set TAB
-				try {
-					tabl = Integer.parseInt(subops);
-
-					if (tabl > 0) {
+				if (!haveSecondSubParams) {
+					if (subops.equals(CNT_SUBOPS) || subops.equals(CNT_SU_SUBOPS)) {
+						numOps++;
+						validOps = true;
+					} else if (subops.equals(BYT_SUBOPS)
+							|| subops.equals(BYT_SU_SUBOPS)) {
+						st = 1;
+						numOps++;
+						validOps = true;
+					} else if (subops.equals(CLS_SUBOPS)
+							|| subops.equals(CLS_SU_SUBOPS)) {
+						st = 2;
 						numOps++;
 						validOps = true;
 					}
+				}
+			} else if (ostr.equals(ORD_OPS) || ostr.equals(ORD_SU_OPS)) { // set order
+				if (!haveSecondSubParams) {
+					if (subops.equals(DES_SUBOPS) || subops.equals(DES_SU_SUBOPS)) {
+						numOps++;
+						validOps = true;
+					} else if (subops.equals(ASC_SUBOPS)
+							|| subops.equals(ASC_SU_SUBOPS)) {
+						ido = false;
+						numOps++;
+						validOps = true;
+					}
+				}
+			} else if (ostr.equals(TAB_OPS) || ostr.equals(TAB_SU_OPS)) { // set TAB
+				if (!haveSecondSubParams) {
+					try {
+						tabl = Integer.parseInt(subops);
 
-				} catch (NumberFormatException ex) {
-					;
+						if (tabl > 0) {
+							numOps++;
+							validOps = true;
+						}
+
+					} catch (NumberFormatException ex) {
+						;
+					}
 				}
 			} else if (ostr.equals(FORMAT_OPS) || ostr.equals(FORMAT_SU_OPS)) { // set result format
 				if (subops.equals(STD_SUBOPS) || subops.equals(STD_SU_SUBOPS)) {
-					numOps++;
-					validOps = true;
+					if (!haveSecondSubParams) {
+						numOps++;
+						validOps = true;
+					}
 				} else if (subops.equals(CSV_SUBOPS) || subops.equals(CSV_SU_SUBOPS)) {
-					fmt = 1;
-					numOps++;
-					validOps = true;
+					if (!haveSecondSubParams || subparam.equals(QUT_SUBPARAMS) || subparam.equals(QUT_SU_SUBPARAMS)) {
+						fmt = 1;
+						numOps++;
+						validOps = true;
+					}
 				}
 			}
 
@@ -172,10 +207,10 @@ public class JavaObjectDiff extends MononovCommons {
 
 		try {
 			isCUI = true;
-			 //@param resultFormat
-			 //Result format: 0 - standard format suitable for console delimited by TAB/ 1 - comma separated value 
-			 //@param tabLength
-			 //            Desired TAB length with integer value larger than 0
+			//@param resultFormat
+			//Result format: 0 - standard format suitable for console delimited by TAB/ 1 - comma separated value 
+			//@param tabLength
+			//            Desired TAB length with integer value larger than 0
 			oa = mononov.runMerge(st, ido, args[numOps], secondFile);	
 		} catch (MononovException mex) {
 			System.out.println(mex.getLocalizedMessage());
@@ -284,7 +319,9 @@ public class JavaObjectDiff extends MononovCommons {
 						System.exit(1);
 					}
 				} else if (i < (oa.length -1) || u < (columnName.length - 1)) { // csv format
-					ts = ts + ",";
+					ts = quote + ts + quote + ",";					
+				} else {
+					ts = quote + ts + quote;
 				}
 				// print one line for results - need for CSV
 				System.out.print(ts);
@@ -531,12 +568,13 @@ public class JavaObjectDiff extends MononovCommons {
 	private static void showUsage(String className) {
 		System.out.println(getI18nMessages("usage") + ": java " + className
 				+ " [" + HLP_OPS + "]" + " [" + VAR_OPS + "]" + " [" + SORT_OPS
-				+ SUBOPS_DELI + "{" + CNT_SUBOPS + "/" + BYT_SUBOPS + "/"
+				+ SUBOPS_DELI + "{" + CNT_SUBOPS + "|" + BYT_SUBOPS + "|"
 				+ CLS_SUBOPS + "}]" + " [" + ORD_OPS + SUBOPS_DELI + "{"
-				+ DES_SUBOPS + "/" + ASC_SUBOPS + "}]" + " [" + TAB_OPS
+				+ DES_SUBOPS + "|" + ASC_SUBOPS + "}]" + " [" + TAB_OPS
 				+ SUBOPS_DELI + "<" + getI18nMessages("tab_number") + ">]"
-				+ " [" + FORMAT_OPS + SUBOPS_DELI + "{" + STD_SUBOPS + "/" + CSV_SUBOPS + "}]"
-				+ " <jmap " + getI18nMessages("histogram") + " 1> [<jmap "
+				+ " [" + FORMAT_OPS + SUBOPS_DELI + "{" + STD_SUBOPS + "|"
+				+ CSV_SUBOPS + "[," + QUT_SUBPARAMS + EQUAL + "<" + getI18nMessages("quote_str") +">" +"]"
+				+ "}] <jmap " + getI18nMessages("histogram") + " 1> [<jmap "
 				+ getI18nMessages("histogram") + " 2>]");
 	}
 
@@ -574,7 +612,8 @@ public class JavaObjectDiff extends MononovCommons {
 				+ getI18nMessages("usub_ops") + ":\n" + SPACES + "\t" + SPACES
 				+ STD_SUBOPS + " | " + STD_SU_SUBOPS + "\t:"
 				+ getI18nMessages("stand_format") + "\n" + SPACES + "\t"
-				+ SPACES + CSV_SUBOPS + " | " + CSV_SU_SUBOPS + "\t:"
+				+ SPACES + CSV_SUBOPS + "[," + QUT_SUBPARAMS + EQUAL + "<" + getI18nMessages("quote_str") +">" +"]" + " | "
+				+ CSV_SU_SUBOPS + "[," + QUT_SU_SUBPARAMS + EQUAL + "<" + getI18nMessages("quote_str") +">" +"]\t:"
 				+ getI18nMessages("csv_format"));
 	}
 }

@@ -4,11 +4,13 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 public class MononovCommons {
-	protected final static String version = "0.4.5";
+	protected final static String version = "0.5";
 	protected final static String SPACES = "    ";
 	protected final static String OPS_HEADER = "--";
 	protected final static String SU_OPS_HEADER = "-";
 	protected final static String SUBOPS_DELI = ":";
+	protected final static String SUBPARAMS_SEPRATOR = ",";
+	protected final static String EQUAL = "=";
 	protected final static String HLP_OPS = OPS_HEADER + "help";
 	protected final static String HLP_SU_OPS = SU_OPS_HEADER + "h";
 	protected final static String VAR_OPS = OPS_HEADER + "version";
@@ -33,10 +35,11 @@ public class MononovCommons {
 	protected final static String FORMAT_SU_OPS = SU_OPS_HEADER + "f";
 	protected final static String STD_SUBOPS = "standard";
 	protected final static String STD_SU_SUBOPS = "s";
-	
 	protected final static String CSV_SUBOPS = "csv";
 	protected final static String CSV_SU_SUBOPS = "c";
-	
+	protected final static String QUT_SUBPARAMS = "quote";
+	protected final static String QUT_SU_SUBPARAMS = "q";
+
 	protected final static String RES_BNDL = "quitada.props.messages";
 	protected final static String EX_BNDL = "quitada.props.exceptions";
 	protected final static String NULL_CLN = "NullClass";
