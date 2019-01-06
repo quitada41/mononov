@@ -3,7 +3,7 @@ I'm pleased to announce that I've released the version 0.4.5 of the following my
 
 [Tool to find slow memory leak of java applications](http://quitada.hatenablog.jp/entry/2013/02/08/012154)
 
-You can download the jar file of version 0.4.5 from [here](http://code.google.com/p/mononov/downloads/detail?name=JavaObjDiff-v0.4.5.jar)([src](http://code.google.com/p/mononov/downloads/detail?name=JavaObjDiff-v0.4.5-src.zip))([Javadoc](http://www.geocities.jp/akihiro_quitada/Mononov/Javadoc/045/)). You can just execute this as a Java appliction with adding this jar file to CLASSPATH. The usage is similar to UNIX diff command like the following.
+You can download the jar file of version 0.4.5 from [here](http://code.google.com/p/mononov/downloads/detail?name=JavaObjDiff-v0.4.5.jar)([src](http://code.google.com/p/mononov/downloads/detail?name=JavaObjDiff-v0.4.5-src.zip))([Javadoc](http://hokkaidou.me/quitada/Mononov/Javadoc/045/)). You can just execute this as a Java appliction with adding this jar file to CLASSPATH. The usage is similar to UNIX diff command like the following.
 ```
 java quitada.JavaObjectDiff <java histogram file before memory leak> <java histogram file after memory leak>
 ```
